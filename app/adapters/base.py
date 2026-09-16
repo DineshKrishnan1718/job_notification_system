@@ -1,21 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import List
-from app.models.schemas import JobSchema
+from app.models.schemas import JobSchema, SearchCriteria
 from app.config.logging_config import logger
 
+
 class BaseJobSource(ABC):
-    """
-    Abstract Base Class for all job sources.
-    """
-    
+    """Contract implemented by every permitted job source adapter."""
+
     def __init__(self):
-        # Every adapter gets its own logger context (e.g., JobAutomation.LinkedInAdapter)
         self.logger = logger.getChild(self.__class__.__name__)
 
+    @property
     @abstractmethod
-    def fetch_jobs(self, search_config: dict) -> List[JobSchema]:
-        """
-        Fetch jobs based on configuration and return a normalized list of JobSchema.
-        Must be implemented by every child class.
-        """
-        pass
+    def name(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def fetch_jobs(self, search_config: SearchCriteria | dict) -> list[JobSchema]:
+        raise NotImplementedError
