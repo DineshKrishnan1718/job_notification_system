@@ -1,0 +1,21 @@
+# --- Core Data Models & Configuration ---
+pydantic>=2.4.0
+pydantic-settings>=2.0.3
+python-dotenv>=1.0.0
+
+# --- Web & API Requests ---
+requests>=2.31.0
+# playwright>=1.38.0  # Uncomment when you build the Playwright adapter!
+
+# --- Database & ORM ---
+SQLAlchemy>=2.0.21
+psycopg2-binary>=2.9.9  # Required for PostgreSQL in Docker
+
+# --- Email & HTML Templating ---
+Jinja2>=3.1.2
+
+# --- Automation & Scheduling ---
+schedule>=1.2.1
+
+# --- Testing Framework ---
+pytest>=7.4.2

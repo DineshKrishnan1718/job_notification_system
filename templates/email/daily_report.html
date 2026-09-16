@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+        .summary-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #0056b3; color: white; }
+        .apply-btn { background-color: #28a745; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px; }
+        .score-Excellent { color: #d63384; font-weight: bold; } /* Pink/Red for 🔥 */
+        .score-Strong { color: #fd7e14; font-weight: bold; }    /* Orange for ⭐ */
+        .score-Relevant { color: #0d6efd; font-weight: bold; }  /* Blue for 👍 */
+    </style>
+</head>
+<body>
+    <h2>Daily Job Notification – {{ date_str }}</h2>
+    
+    <div class="summary-box">
+        <h3>Summary</h3>
+        <ul>
+            <li><strong>Total Matching Jobs Today:</strong> {{ total_jobs }}</li>
+            <li><strong>🔥 Excellent Matches (>90%):</strong> {{ excellent_count }}</li>
+            <li><strong>⭐ Strong Matches (75-89%):</strong> {{ strong_count }}</li>
+        </ul>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Match</th>
+                <th>Role</th>
+                <th>Company</th>
+                <th>Location</th>
+                <th>Platform</th>
+                <th>Apply</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td class="score-{{ job.category }}">{{ job.icon }} {{ job.match_score }}%</td>
+                <td><strong>{{ job.title }}</strong><br><small>{{ job.matching_skills }}</small></td>
+                <td>{{ job.company_name }}</td>
+                <td>{{ job.location }}</td>
+                <td>{{ job.source }}</td>
+                <td><a href="{{ job.url }}" class="apply-btn" target="_blank">Apply</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
