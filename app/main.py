@@ -1,115 +1,72 @@
-import sys
 from app.config.settings import settings
 from app.config.logging_config import logger
-
-# Phase 3: Adapters
 from app.adapters.manager import JobSourceManager
 from app.adapters.remote_api import PublicJobAPIAdapter
-
-# Phase 4: Matching
 from app.models.profile import UserProfile
+from app.models.schemas import SearchCriteria
 from app.core.matching import MatchEngine
-
-# Phase 5: Database
-from app.database.session import SessionLocal, Base, engine
-from app.database.crud import save_jobs, get_unemailed_jobs, mark_jobs_as_emailed
-
-# Phase 6: Notifications
+from app.core.normalization import normalize_job
+from app.database.session import SessionLocal
+from app.database.crud import (
+    save_jobs, get_unemailed_jobs, mark_jobs_as_emailed,
+    create_job_run, finish_job_run,
+)
 from app.notifications.email_sender import EmailService
 
 
-def run_daily_job_pipeline():
-    logger.info("==================================================")
-    logger.info("Starting Daily Job Notification Pipeline...")
-    logger.info("==================================================")
+def build_profile() -> UserProfile:
+    return UserProfile(
+        required_skills=settings.required_skills,
+        optional_skills=settings.preferred_skills,
+        banned_keywords=settings.banned_keywords,
+        locations=settings.locations,
+        min_experience=settings.min_experience,
+        max_experience=settings.max_experience,
+        min_salary_lpa=settings.min_salary_lpa,
+    )
 
-    # 0. Database Initialization (Creates tables if they don't exist)
-    Base.metadata.create_all(bind=engine)
+
+def build_source_manager() -> JobSourceManager:
+    manager = JobSourceManager()
+    if settings.job_api_url:
+        manager.register_source(PublicJobAPIAdapter(settings.job_api_url))
+    return manager
+
+
+def run_daily_job_pipeline() -> bool:
+    """Run one complete job-search cycle. Returns True on success."""
     db = SessionLocal()
-
+    run = create_job_run(db)
     try:
-        # ---------------------------------------------------------
-        # PHASE 3 & 4 SETUP: Search Config & User Profile
-        # ---------------------------------------------------------
-        search_config = {
-            "JOB_ROLES": settings.JOB_ROLES,
-            "LOCATIONS": settings.LOCATIONS
-        }
+        logger.info("Starting job notification run %s", run.id)
+        criteria = SearchCriteria(roles=settings.job_roles, locations=settings.locations)
+        manager = build_source_manager()
+        raw_jobs = manager.fetch_all_jobs(criteria)
+        run.jobs_fetched = len(raw_jobs)
+        run.sources_attempted = len(manager.sources)
 
-        # In a real app, you might load this from a JSON file or the DB.
-        # For now, we define our target resume skills here.
-        my_profile = UserProfile(
-            required_skills=["Python", "Playwright", "PyTest", "API", "Automation"],
-            optional_skills=["Docker", "Jenkins", "SQL", "Linux", "CI/CD", "AWS"],
-            banned_keywords=["Java", "C#", "Ruby", "Manual Testing"]
-        )
-        
-        match_engine = MatchEngine(profile=my_profile)
+        normalized = [normalize_job(job) for job in raw_jobs]
+        engine = MatchEngine(build_profile())
+        scored = [engine.score_job(job) for job in normalized]
+        run.jobs_matched = sum(job.match_score >= settings.match_threshold for job in scored)
 
-        # ---------------------------------------------------------
-        # PHASE 3: Fetch Raw Jobs via Source Adapters
-        # ---------------------------------------------------------
-        manager = JobSourceManager()
-        
-        # Register all active sources
-        manager.register_source(PublicJobAPIAdapter())
-        # manager.register_source(LinkedInAdapter()) # Plug in more later!
+        run.jobs_unique = save_jobs(db, scored)
+        pending = get_unemailed_jobs(db, settings.match_threshold)
+        if pending:
+            EmailService().send_daily_report(pending)
+            mark_jobs_as_emailed(db, pending, settings.email_to)
+            run.jobs_notified = len(pending)
 
-        logger.info("Fetching raw jobs from all registered sources...")
-        raw_jobs = manager.fetch_all_jobs(search_config)
-        
-        if not raw_jobs:
-            logger.info("No jobs found from any source today. Exiting pipeline.")
-            return
-
-        # ---------------------------------------------------------
-        # PHASE 4: Score and Filter Jobs
-        # ---------------------------------------------------------
-        logger.info("Running Match Engine against found jobs...")
-        scored_jobs = []
-        for job in raw_jobs:
-            scored_job = match_engine.score_job(job)
-            scored_jobs.append(scored_job)
-            
-        # ---------------------------------------------------------
-        # PHASE 5: Save to Database (Deduplication)
-        # ---------------------------------------------------------
-        logger.info("Saving jobs to database and checking for duplicates...")
-        new_jobs_added = save_jobs(db, scored_jobs)
-        logger.info(f"Pipeline identified {new_jobs_added} genuinely new jobs.")
-
-        # ---------------------------------------------------------
-        # PHASE 6: Generate Report & Send Email
-        # ---------------------------------------------------------
-        logger.info(f"Querying DB for unemailed jobs with score >= {settings.MATCH_THRESHOLD}%")
-        pending_jobs = get_unemailed_jobs(db, min_score=settings.MATCH_THRESHOLD)
-
-        if pending_jobs:
-            logger.info(f"Preparing to email {len(pending_jobs)} high-matching jobs.")
-            email_service = EmailService()
-            
-            try:
-                email_service.send_daily_report(pending_jobs)
-                
-                # VERY IMPORTANT: Only mark as emailed if the email actually succeeded!
-                mark_jobs_as_emailed(db, pending_jobs)
-                logger.info("Successfully marked jobs as emailed in the database.")
-                
-            except Exception as e:
-                logger.error(f"Email dispatch failed: {e}. Jobs will remain in queue for tomorrow.")
-        else:
-            logger.info("No new jobs met the match threshold today. No email sent.")
-
-    except Exception as e:
-        logger.critical(f"CRITICAL ERROR in main pipeline: {e}", exc_info=True)
-        sys.exit(1)
-        
+        finish_job_run(db, run, "SUCCESS")
+        logger.info("Job notification run %s completed", run.id)
+        return True
+    except Exception as exc:
+        logger.exception("Job notification run %s failed", run.id)
+        finish_job_run(db, run, "FAILED", str(exc))
+        return False
     finally:
-        # Ensure database connection is closed regardless of success or failure
         db.close()
-        logger.info("Database session closed. Pipeline finished.")
-        logger.info("==================================================")
 
 
 if __name__ == "__main__":
-    run_daily_job_pipeline()
+    raise SystemExit(0 if run_daily_job_pipeline() else 1)
