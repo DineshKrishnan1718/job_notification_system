@@ -72,8 +72,8 @@ Built as a portfolio project to demonstrate **Backend Development, System Design
 1. Clone the repository and configure your environment:
 
 ```bash
-git clone [https://github.com/yourusername/job-notification-pipeline.git](https://github.com/yourusername/job-notification-pipeline.git)
-cd job-notification-pipeline
+git clone [https://github.com/DineshKrishnan1718/job_notification_system.git](https://github.com/DineshKrishnan1718/job_notification_system.git)
+cd job_notification_system
 cp .env.example .env
 ```
 
@@ -127,3 +127,10 @@ pytest
 
 
 
+
+
+## Current production-prototype foundation
+
+The production-prototype branch adds validated configuration, typed job schemas, normalization, explainable matching, source isolation, PostgreSQL-ready persistence, JobRun/SourceRun/Notification tracking, Alembic migrations, secure Docker defaults, GitHub Actions CI, and hardened Jenkins quality gates.
+
+Source integrations must use permitted APIs, feeds, or public career pages. LinkedIn, Naukri, Indeed, Glassdoor, Foundit and other platforms may require platform-specific API access or have restrictions; they are not represented as active integrations until a compliant adapter is configured.

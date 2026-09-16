@@ -1,34 +1,30 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15-alpine
-    container_name: job_scraper_db
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: job_user
-      POSTGRES_PASSWORD: super_secret_password
-      POSTGRES_DB: job_database
-    ports:
-      - "5432:5432" # Maps port 5432 on your laptop to 5432 in the container
+      POSTGRES_USER: $${POSTGRES_USER:-job_user}
+      POSTGRES_PASSWORD: $${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: $${POSTGRES_DB:-job_database}
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Makes DB data permanent!
-    restart: unless-stopped
-
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   app:
-    build: .
-    container_name: job_scraper_app
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
     depends_on:
-      - db # Ensures the database starts before the application
+      db:
+        condition: service_healthy
     env_file:
-      - .env # Loads your real credentials safely
+      - ../.env
     environment:
-      # OVERRIDE the SQLite URL in your .env with the Postgres Docker URL
-      - DATABASE_URL=postgresql://job_user:super_secret_password@db:5432/job_database
+      DATABASE_URL: postgresql://$${POSTGRES_USER:-job_user}:$${POSTGRES_PASSWORD:-change_me}@db:5432/$${POSTGRES_DB:-job_database}
     volumes:
-      - ./logs:/app/logs # Maps container logs to your local laptop so you can read them
+      - ../logs:/app/logs
     restart: unless-stopped
-
 volumes:
-  # This tells Docker to create a persistent hard drive for Postgres.
-  # Otherwise, every time Docker restarts, all your saved jobs get deleted!
   postgres_data:

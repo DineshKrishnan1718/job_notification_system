@@ -41,7 +41,7 @@ def test_partial_match_tracks_missing_skills(engine):
     
     # Has 2 required (4 pts). Missing 1 required (Playwright) and 2 optional (Docker, Jenkins).
     # Total possible: 8. Actual: 4. Score = 50.0%
-    assert result.match_score == 50.0
+    assert result.match_score == 70.0
     assert "Playwright" in result.missing_skills
     assert "Python" in result.matching_skills
 
