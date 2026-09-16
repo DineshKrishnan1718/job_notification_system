@@ -1,7 +1,46 @@
+# Python virtual environments
+.venv/
 venv/
+env/
+
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Test / coverage
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Environment / secrets
 .env
+.env.*
+!.env.example
+
+# Logs
 logs/
-jobs.db
+*.log
+
+# Local database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation / development files
+README.md
