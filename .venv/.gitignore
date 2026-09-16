@@ -1,24 +1,69 @@
-# Environments
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ==============================
+# Virtual environments
+# ==============================
 .venv/
+venv/
 env/
 
-# IDEs and Editors
-.vscode/
-.idea/
-*.swp
-
-# Python cache files
-__pycache__/
-*.pyc
-.pytest_cache/
-
-# Secrets and Configs
+# ==============================
+# Environment variables / secrets
+# ==============================
 .env
+.env.*
+!.env.example
 
-# Databases
-*.db
-*.sqlite3
+# ==============================
+# Testing
+# ==============================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
 
+# ==============================
 # Logs
+# ==============================
 logs/
 *.log
+
+# ==============================
+# Database
+# ==============================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==============================
+# IDE
+# ==============================
+.vscode/
+.idea/
+
+# ==============================
+# OS
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# Build / distribution
+# ==============================
+build/
+dist/
+*.egg-info/
+
+# ==============================
+# Temporary files
+# ==============================
+*.tmp
+*.temp
+*.bak
