@@ -1,0 +1,24 @@
+# Environments
+.venv/
+env/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+
+# Python cache files
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets and Configs
+.env
+
+# Databases
+*.db
+*.sqlite3
+
+# Logs
+logs/
+*.log
