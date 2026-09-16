@@ -1,4 +1,4 @@
-import requests
+import requests\nfrom datetime import datetime, timezone
 from app.adapters.base import BaseJobSource
 from app.models.schemas import JobSchema, SearchCriteria
 
@@ -23,5 +23,5 @@ class PublicJobAPIAdapter(BaseJobSource):
                 response = session.get(self.base_url, params={"search": role, "limit": 50}, timeout=20)
                 response.raise_for_status()
                 for item in response.json().get("results", []):
-                    jobs.append(JobSchema(job_id=str(item.get("id") or item.get("job_id") or item.get("url") or item.get("title")), title=item.get("title") or "Unknown Title", company=item.get("company_name") or item.get("company") or "Unknown Company", location=item.get("location") or "Remote", description=item.get("description") or "", url=item.get("apply_url") or item.get("url"), source=self.name, posted_date=item.get("posted_at") or item.get("posted_date") or None, work_type=item.get("work_type") or "unknown"))
+                    jobs.append(JobSchema(job_id=str(item.get("id") or item.get("job_id") or item.get("url") or item.get("title")), title=item.get("title") or "Unknown Title", company=item.get("company_name") or item.get("company") or "Unknown Company", location=item.get("location") or "Remote", description=item.get("description") or "", url=item.get("apply_url") or item.get("url"), source=self.name, posted_date=item.get("posted_at") or item.get("posted_date") or datetime.now(timezone.utc), work_type=item.get("work_type") or "unknown"))
         return jobs
