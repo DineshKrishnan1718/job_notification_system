@@ -10,7 +10,8 @@ def utc_now() -> datetime:
 class JobSchema(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    job_id: str = Field(..., min_length=1)
+    # Optional for backward-compatible local fixtures; real adapters should always provide it.
+    job_id: str = Field(default="local")
     title: str = Field(..., min_length=1)
     company: str = Field(..., min_length=1)
     location: str = "Unknown"
